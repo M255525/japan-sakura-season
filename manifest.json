@@ -1,0 +1,16 @@
+{
+  "name": "日本櫻花季地圖",
+  "short_name": "櫻花季",
+  "description": "3D 日本櫻花季地圖：拖曳日期看櫻前線北上，48 個賞櫻名所花況、15 種櫻花品種實景照片圖鑑與賞櫻須知。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fde7ee",
+  "theme_color": "#e8678f",
+  "lang": "zh-TW",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>日本櫻花季地圖</title>
+<meta name="description" content="3D 日本櫻花季地圖：拖曳日期，看櫻前線從沖繩一路開到北海道；48 個賞櫻名所的花況、15 種櫻花品種實景照片圖鑑與賞櫻須知。">
+<meta name="theme-color" content="#e8678f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="櫻花季">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<style>
+:root{
+  --ink:#2c2438; --ink2:#5a5068; --mute:#8b8197; --paper:#fffaf6; --paper2:#fbeff2; --line:#efd8df; --edge:#3b2f4a;
+  --sakura:#e8678f; --sakura2:#f7b6c9; --shu:#d4452b; --gold:#c9a227; --sea:#2f6db0; --leaf:#5aa25a;
+  --shadow:0 8px 26px rgba(70,30,50,.16); --mq:0px; --r:16px;
+  --font:'Noto Sans TC',system-ui,sans-serif; --serif:'Noto Serif TC','Noto Sans TC',serif;
+  --sky1:#a9d4f5; --sky2:#fde7ee;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark; --ink:#f3e9ee; --ink2:#d3c4cf; --mute:#a597a7; --paper:#231c29; --paper2:#2e2434; --line:#47374d; --edge:#c9b4cf; --shadow:0 8px 26px rgba(0,0,0,.5); }
+}
+:root[data-theme="dark"]{ color-scheme:dark; --ink:#f3e9ee; --ink2:#d3c4cf; --mute:#a597a7; --paper:#231c29; --paper2:#2e2434; --line:#47374d; --edge:#c9b4cf; --shadow:0 8px 26px rgba(0,0,0,.5); }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{font-family:var(--font);color:var(--ink);background:#f6e3ea;-webkit-font-smoothing:antialiased}
+body.has-marquee{--mq:30px}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--sea)}
+[hidden]{display:none!important}
+#marqueeBar{position:fixed;top:0;left:0;right:0;height:30px;background:var(--shu);color:#fff;z-index:1500;overflow:hidden;display:none;align-items:center;font-size:13px;font-weight:700}
+#marqueeBar.show{display:flex}
+#marqueeTrack{display:inline-block;white-space:nowrap;padding-left:100%;animation:marquee 30s linear infinite}
+#marqueeBar:hover #marqueeTrack{animation-play-state:paused}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+#stage{position:fixed;left:0;right:0;bottom:0;top:var(--mq);background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 62%,#f6e3ea 100%);transition:background 1s}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lab3d{position:absolute;left:0;top:0;white-space:nowrap;transition:opacity .2s;will-change:transform}
+.lab3d.off{opacity:0;pointer-events:none!important}
+.plab{pointer-events:auto;border:1.5px solid rgba(255,255,255,.95);background:rgba(44,36,56,.82);color:#fff;font-size:12px;padding:2px 9px 2px 5px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.2);display:flex;align-items:center;gap:5px}
+.plab i{width:10px;height:10px;border-radius:50%;border:1.5px solid #fff;display:inline-block;background:#ccc}
+.plab:hover,.plab.on{background:var(--shu)}
+.plab.on{font-size:14px;padding:3px 11px 3px 6px}
+.ilab{font-family:var(--serif);font-weight:900;color:#4b2f45;font-size:15px;text-shadow:0 0 4px #fff,0 0 8px #fff;letter-spacing:.15em}
+.ilab.main{font-size:24px;letter-spacing:.45em;color:rgba(75,47,69,.82)}
+.pk{font-size:11px;color:#3e3a46;text-shadow:0 0 3px #fff,0 0 6px #fff}
+.sealab{font-family:var(--serif);font-size:17px;color:rgba(255,255,255,.88);letter-spacing:.3em;text-shadow:0 1px 3px rgba(16,40,90,.5)}
+.sealab.small{font-size:12px}
+.frontlab{font-family:var(--serif);font-weight:900;font-size:14px;color:#fff;background:linear-gradient(90deg,#e23d73,#f28ab0);border:2px solid #fff;border-radius:999px;padding:3px 12px;box-shadow:0 3px 10px rgba(180,30,80,.35)}
+
+.ui{position:fixed;z-index:20}
+.card-ui{background:var(--paper);border:1.5px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+  background-image:radial-gradient(rgba(232,103,143,.05) 1px,transparent 1.2px);background-size:7px 7px}
+#brand{left:14px;top:calc(var(--mq) + 12px);padding:10px 16px 10px 12px;display:flex;gap:10px;align-items:center;max-width:340px}
+#brand svg{flex:none}
+#brand h1{margin:0;font-family:var(--serif);font-weight:900;font-size:21px;line-height:1.15;letter-spacing:.06em}
+#brand p{margin:3px 0 0;font-size:12px;color:var(--ink2)}
+
+#ctrl{left:370px;right:380px;bottom:14px;padding:8px 12px 6px;display:flex;gap:12px;align-items:center}
+#dateBox{flex:none;text-align:center;min-width:86px}
+#dateBox b{display:block;font-family:var(--serif);font-weight:900;font-size:26px;line-height:1.05;color:var(--sakura)}
+#dateBox small{font-size:11px;color:var(--mute)}
+.cwrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+#axis{position:relative;height:58px}
+#axBars{position:absolute;left:0;right:0;top:0;height:38px;display:grid;grid-template-columns:repeat(15,1fr);gap:3px;align-items:end}
+.axc{height:100%;display:flex;align-items:flex-end;justify-content:center;border-radius:5px 5px 0 0;position:relative;cursor:pointer;background:transparent;border:0;padding:0}
+.axc i{width:70%;border-radius:4px 4px 0 0;background:var(--sakura2);min-height:2px;transition:height .4s,background .3s}
+.axc.on i{background:var(--sakura)}
+.axc b{position:absolute;top:-2px;left:0;right:0;font-size:10px;color:var(--sakura);display:none}
+.axc.on b{display:block}
+#axMonths{position:absolute;left:0;right:0;top:40px;height:14px;display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid var(--edge);font-size:11px;color:var(--ink2)}
+#axMonths span{border-left:1.5px solid var(--line);padding-left:4px;line-height:14px}
+#dRange{position:absolute;left:-9px;right:-9px;width:calc(100% + 18px);top:26px;margin:0;height:30px;background:transparent;-webkit-appearance:none;appearance:none;cursor:grab}
+#dRange::-webkit-slider-runnable-track{height:30px;background:transparent}
+#dRange::-moz-range-track{height:30px;background:transparent}
+#dRange::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;margin-top:5px;border-radius:50%;background:var(--shu);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+#dRange::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--shu);border:3px solid #fff}
+#dRange:focus-visible::-webkit-slider-thumb{outline:3px solid var(--gold)}
+.cbtns{flex:none;display:flex;flex-direction:column;gap:4px}
+#play{width:38px;height:38px;border-radius:50%;border:0;background:var(--sakura);color:#fff;font-size:15px;box-shadow:0 2px 6px rgba(200,60,100,.35)}
+#play.on{background:var(--shu)}
+#btnToday{border:1.5px solid var(--line);background:var(--paper2);border-radius:8px;font-size:11px;padding:1px 4px}
+
+#mode{left:370px;top:calc(var(--mq) + 12px);padding:5px;display:flex;gap:4px}
+.mbtn{border:0;border-radius:11px;background:transparent;padding:6px 12px;font-size:14px;font-weight:700;color:var(--ink2)}
+.mbtn.on{background:var(--sakura);color:#fff}
+
+#panel{right:14px;top:calc(var(--mq) + 12px);bottom:14px;width:360px;display:flex;flex-direction:column;overflow:hidden}
+#panelHead{padding:12px 14px 10px;border-bottom:1.5px dashed var(--line);max-height:52%;overflow-y:auto}
+.selrow{display:flex;gap:6px}
+.selrow select{flex:1;min-width:0;font:inherit;font-size:14px;padding:7px 8px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper2);color:var(--ink)}
+#place{margin-top:10px}
+#place h2{margin:0;font-family:var(--serif);font-weight:900;font-size:20px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+#place h2 small{font-family:var(--font);font-weight:400;font-size:12px;color:var(--mute)}
+#place p{margin:4px 0 0;font-size:13px;color:var(--ink2);line-height:1.6}
+.meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.meta span{font-size:11.5px;border-radius:999px;padding:1px 8px;background:var(--paper2);border:1px solid var(--line);color:var(--ink2)}
+.stchip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;color:#2c2438;border:1.5px solid rgba(0,0,0,.12)}
+.timeline{margin-top:8px;position:relative;height:30px}
+.timeline .bar{position:absolute;top:6px;height:12px;border-radius:6px}
+.timeline .base{left:0;right:0;background:var(--paper2);border:1px solid var(--line)}
+.timeline .now{position:absolute;top:0;width:2px;height:24px;background:var(--shu)}
+.timeline .lab{position:absolute;top:19px;font-size:10px;color:var(--mute);transform:translateX(-50%)}
+details.tips{margin-top:6px;font-size:12.5px;color:var(--ink2)}
+details.tips summary{cursor:pointer;color:var(--shu);font-weight:700}
+details.tips ul{margin:4px 0 0;padding-left:18px;line-height:1.6}
+.rowbtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sbtn{border:1.5px solid var(--line);background:var(--paper2);border-radius:10px;padding:4px 10px;font-size:12.5px}
+.sbtn:hover{border-color:var(--sakura);color:var(--sakura)}
+#sum{margin-top:8px;font-size:13px;background:var(--paper2);border-radius:10px;padding:6px 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#sum b{font-family:var(--serif);font-weight:900;font-size:18px;color:var(--sakura)}
+#list{flex:1;overflow-y:auto;padding:10px 12px 14px;display:flex;flex-direction:column;gap:7px}
+#list.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+.scard{border:1.5px solid var(--line);background:var(--paper);border-radius:12px;padding:7px 10px;text-align:left;display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center}
+.scard:hover,.scard.on{border-color:var(--sakura);box-shadow:0 3px 10px rgba(232,103,143,.18)}
+.scard b{font-family:var(--serif);font-size:15px}
+.scard small{grid-column:1/-1;font-size:11.5px;color:var(--mute)}
+.lgrp{font-size:12px;font-weight:700;color:var(--ink2);margin:4px 2px 0}
+.vcard{border:1.5px solid var(--line);background:var(--paper);border-radius:12px;padding:6px 7px 8px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.vcard:hover{border-color:var(--sakura);transform:translateY(-2px);box-shadow:0 4px 10px rgba(232,103,143,.2)}
+.vcard .pic{height:80px;border-radius:9px;overflow:hidden;position:relative;background:var(--paper2);display:flex;align-items:center;justify-content:center}
+.vcard .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vcard .pic .st{position:absolute;left:4px;top:4px;z-index:1}
+.vcard b{font-family:var(--serif);font-size:15px;margin-top:3px}
+.vcard small{font-size:11px;color:var(--mute);line-height:1.4}
+.empty{grid-column:1/-1;text-align:center;color:var(--mute);font-size:13px;padding:24px 8px;line-height:1.7}
+#panelFoot{display:flex;justify-content:space-between;align-items:center;gap:6px 8px;flex-wrap:wrap;padding:7px 12px;border-top:1.5px dashed var(--line);font-size:12px;color:var(--mute)}
+#panelFoot button{border:0;background:none;padding:0;color:var(--sea);text-decoration:underline;font-size:12px}
+#panelFoot img{display:block}
+#panelFoot .warnline{flex-basis:100%;color:#a0462a}
+
+#legend{left:14px;bottom:14px;padding:8px 12px;font-size:12px;color:var(--ink2);max-width:340px;line-height:1.55}
+#legend .lg{display:flex;flex-wrap:wrap;gap:4px 10px}
+#legend .lg span{display:flex;align-items:center;gap:4px}
+#legend i{width:11px;height:11px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.15)}
+#legend .ln{display:inline-block;width:18px;height:4px;border-radius:2px;background:#e3286f;vertical-align:middle}
+#tools{left:14px;bottom:122px;display:flex;flex-direction:column;gap:6px}
+.tbtn{border:1.5px solid var(--line);background:var(--paper);border-radius:11px;padding:6px 11px;font-size:13px;box-shadow:0 2px 6px rgba(70,30,50,.1);text-align:left}
+.tbtn:hover{border-color:var(--sakura);color:var(--sakura)}
+.tbtn.hl{background:#fde6ee;color:#7a2346;border-color:#f3b7c9}
+a.tbtn{text-decoration:none;color:var(--ink)}
+
+#loading{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:linear-gradient(180deg,#bfe0f7,#fde7ee);transition:opacity .6s;font-family:var(--serif);font-size:19px;color:#4b2f45}
+#loading.hide{opacity:0;pointer-events:none}
+#loading svg{animation:spin 5s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading small{font-family:var(--font);font-size:13px;color:#6a5a6a;max-width:300px;text-align:center}
+
+.modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px;padding-top:calc(16px + var(--mq));background:rgba(40,20,35,.45)}
+.modal.show{display:flex}
+.sheet{background:var(--paper);border:1.5px solid var(--line);border-radius:20px;box-shadow:0 18px 50px rgba(40,10,30,.35);width:min(920px,100%);max-height:calc(100vh - 32px - var(--mq));overflow:auto;position:relative}
+.x{position:absolute;right:12px;top:12px;width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:var(--paper);font-size:18px;z-index:2}
+.x:hover{background:var(--shu);color:#fff}
+#varHead{display:grid;grid-template-columns:minmax(0,400px) 1fr;gap:18px;padding:18px 18px 8px;align-items:start}
+#phWrap{border-radius:14px;border:1.5px solid var(--line);overflow:hidden;background:var(--paper2);margin:0}
+#phImg{display:block;width:100%;height:270px;object-fit:cover}
+#phArt{display:flex;align-items:center;justify-content:center;height:270px;background:radial-gradient(circle at 50% 45%,#fff,var(--paper2))}
+#phCredit{font-size:11.5px;line-height:1.5;color:var(--ink2);padding:6px 10px;border-top:1px solid var(--line);background:var(--paper2)}
+#phCredit .note{color:var(--mute)}
+#varTitle h2{margin:0;font-family:var(--serif);font-weight:900;font-size:30px;line-height:1.2;padding-right:40px}
+#varTitle .ja{color:var(--ink2);font-size:15px;margin-top:4px}
+#varTitle .sci{font-style:italic;color:var(--mute);font-size:13.5px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-size:12px;border-radius:999px;padding:3px 10px;border:1px solid var(--line);background:var(--paper2)}
+.tag.k{background:#fde6ee;border-color:#f3b7c9;color:#7a2346}
+.quick{margin-top:12px;font-size:14.5px;line-height:1.75;color:var(--ink2)}
+.sec{padding:8px 18px 4px}
+.sec h3{margin:10px 0 6px;font-family:var(--serif);font-weight:900;font-size:18px;display:flex;align-items:center;gap:8px}
+.sec h3::before{content:'';width:12px;height:12px;border-radius:50% 0;background:var(--sakura);transform:rotate(45deg)}
+.sec p{margin:0;line-height:1.8;font-size:14.5px;color:var(--ink2)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px}
+.tipbox{border:1.5px dashed var(--sakura2);background:#fff4f7;color:#6b2a44;border-radius:14px;padding:10px 14px;line-height:1.75;font-size:14.5px}
+.vtab{width:100%;border-collapse:collapse;font-size:13px}
+.vtab td,.vtab th{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left}
+.vtab th{font-weight:700;color:var(--ink2);font-size:12px}
+.vtab button{border:0;background:none;padding:0;color:var(--sea);text-decoration:underline;font:inherit;text-align:left}
+.calnote{font-size:12px;color:var(--mute);margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;border:1.5px solid var(--line);background:var(--paper2);border-radius:999px;padding:3px 10px}
+button.chip:hover,a.chip:hover{border-color:var(--sakura);color:var(--sakura)}
+.mfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 18px 18px;flex-wrap:wrap}
+.mfoot small{color:var(--mute);font-size:12px;max-width:600px;line-height:1.5}
+.pbtn{border:0;background:var(--sakura);color:#fff;border-radius:12px;padding:8px 14px;font-weight:700;box-shadow:0 2px 6px rgba(200,60,100,.3)}
+.pad .sheet{width:min(760px,100%);padding:20px 22px}
+.pad h2{font-family:var(--serif);font-weight:900;margin:0 0 10px;padding-right:44px}
+.warn-box{border:1.5px solid #f0b4ac;background:#fff3f1;color:#6a2a22;border-radius:14px;padding:10px 14px;font-size:13.5px;line-height:1.7}
+.warn-box ul{margin:6px 0 0;padding-left:20px}
+.creator-box{margin-top:12px;border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;font-size:13.5px;line-height:1.7;color:var(--ink2)}
+.etq{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.etq section{border:1.5px solid var(--line);border-radius:14px;padding:8px 12px;background:var(--paper2)}
+.etq h3{margin:0 0 4px;font-family:var(--serif);font-weight:900;font-size:17px}
+.etq ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.65;color:var(--ink2)}
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px;margin-top:12px}
+.gloss div{font-size:13px;line-height:1.55;border-left:3px solid var(--sakura);padding:2px 8px;color:var(--ink2)}
+.gloss b{color:var(--ink)}
+.setbar{display:flex;justify-content:flex-end;gap:6px;margin-bottom:6px}
+.set-sec{border:1.5px solid var(--line);border-radius:12px;margin-bottom:8px;background:var(--paper)}
+.set-sec summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;font-weight:700;font-size:14px}
+.set-sec summary::-webkit-details-marker{display:none}
+.set-sec summary::before{content:'▸';color:var(--sakura);margin-right:2px}
+.set-sec[open] summary::before{content:'▾'}
+.set-sec summary span{flex:1}
+.set-sec summary em{font-style:normal;font-weight:400;font-size:12px;color:var(--mute)}
+.set-body{padding:0 12px 12px;font-size:13.5px;color:var(--ink2)}
+.set-body select{font:inherit;padding:6px 8px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper2);color:var(--ink);width:100%;margin-top:4px}
+.set-body label.ck{display:flex;align-items:center;gap:8px}
+.set-body input[type=checkbox]{width:20px;height:20px}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .warn-box{background:#3a2226;color:#ffd9d3;border-color:#7a3a35} :root:not([data-theme="light"]) .tipbox,:root:not([data-theme="light"]) .tag.k,:root:not([data-theme="light"]) .tbtn.hl{background:#3d2431;color:#ffd0df;border-color:#6b3a52} }
+:root[data-theme="dark"] .warn-box{background:#3a2226;color:#ffd9d3;border-color:#7a3a35}
+:root[data-theme="dark"] .tipbox,:root[data-theme="dark"] .tag.k,:root[data-theme="dark"] .tbtn.hl{background:#3d2431;color:#ffd0df;border-color:#6b3a52}
+
+#sheetBtn{display:none}
+@media (max-width:1200px){
+  #legend{display:none}
+  #ctrl{left:14px}
+  #tools{bottom:112px}
+}
+@media (max-width:760px){
+  #brand{left:10px;right:10px;top:calc(var(--mq) + 8px);max-width:none;padding:7px 10px}
+  #brand h1{font-size:17px}
+  #brand p{display:none}
+  #brand svg{width:34px;height:34px}
+  #ctrl{left:10px;right:10px;top:calc(var(--mq) + 62px);bottom:auto;padding:6px 8px;gap:8px}
+  #dateBox{min-width:62px}
+  #dateBox b{font-size:20px}
+  #mode{left:auto;right:10px;top:calc(var(--mq) + 150px);padding:3px}
+  .mbtn{padding:4px 9px;font-size:12.5px}
+  #panel{left:0;right:0;bottom:0;top:auto;width:auto;height:46vh;border-radius:20px 20px 0 0;border-bottom:0;transition:height .3s}
+  #panel.min{height:118px}
+  #sheetBtn{display:block;position:absolute;right:10px;top:8px;border:1.5px solid var(--line);background:var(--paper2);border-radius:10px;font-size:12px;padding:3px 8px;z-index:2}
+  #panelHead{padding:10px 12px 8px}
+  .selrow{padding-right:58px}
+  #place p,#place .meta,#place details{display:none}
+  #tools{left:10px;bottom:calc(46vh + 10px);flex-direction:row;flex-wrap:wrap;right:10px;gap:4px}
+  body.sheet-min #tools{bottom:128px}
+  .tbtn{padding:4px 6px;font-size:11px;white-space:nowrap}
+  #varHead{grid-template-columns:1fr;padding:14px 14px 6px}
+  #phImg,#phArt{height:210px}
+  #varTitle h2{font-size:24px}
+  .sec{padding:6px 14px 2px}
+  .cols,.etq{grid-template-columns:1fr}
+  .modal{padding:8px;padding-top:calc(8px + var(--mq))}
+}
+@media print{
+  body *{visibility:hidden}
+  #variety, #variety *{visibility:visible}
+  #variety{position:absolute;inset:0;background:#fff;display:block;padding:0}
+  #variety .sheet{box-shadow:none;border:0;max-height:none;overflow:visible}
+  .x,.mfoot button{display:none!important}
+  #varHead{grid-template-columns:300px 1fr}
+}
+@media (prefers-reduced-motion: reduce){ #loading svg,#marqueeTrack{animation:none} }
+</style>
+</head>
+<body>
+<div id="marqueeBar"><div id="marqueeTrack"></div></div>
+
+<div id="stage"><div id="labels"></div></div>
+
+<header id="brand" class="ui card-ui">
+  <svg width="44" height="44" viewBox="-22 -22 44 44" aria-hidden="true">
+    <circle r="21" fill="#fde6ee" stroke="#d4452b" stroke-width="2"/>
+    <g fill="#f29bb8" stroke="#c94a73" stroke-width="1.2">
+      <path id="pt" d="M0 -2 C-7 -6 -7 -15 -2 -17 L0 -14 L2 -17 C7 -15 7 -6 0 -2Z"/>
+      <use href="#pt" transform="rotate(72)"/><use href="#pt" transform="rotate(144)"/><use href="#pt" transform="rotate(216)"/><use href="#pt" transform="rotate(288)"/>
+    </g>
+    <circle r="3.2" fill="#d4452b"/>
+  </svg>
+  <div><h1>日本櫻花季地圖</h1><p>拖曳日期，看櫻前線從沖繩一路開到北海道</p></div>
+</header>
+
+<nav id="ctrl" class="ui card-ui" aria-label="日期">
+  <div id="dateBox"><b id="dateBig">3/28</b><small id="dateSub">三月下旬</small></div>
+  <div class="cwrap">
+    <div id="axis" title="拖曳日期；長條＝每一旬正值見頃（五分開～櫻吹雪）的名所數">
+      <div id="axBars"></div>
+      <div id="axMonths"><span>1月</span><span>2月</span><span>3月</span><span>4月</span><span>5月</span></div>
+      <input type="range" id="dRange" min="10" max="151" step="1" aria-label="日期軸線">
+    </div>
+  </div>
+  <div class="cbtns">
+    <button id="play" type="button" title="自動播放：一路看櫻前線北上" aria-label="自動播放">▶</button>
+    <button id="btnToday" type="button" title="跳到今天（櫻花季以外改為 3 月底）">今天</button>
+  </div>
+</nav>
+
+<div id="mode" class="ui card-ui" role="tablist" aria-label="清單">
+  <button class="mbtn on" data-mode="spots" type="button" role="tab">🌸 名所花況</button>
+  <button class="mbtn" data-mode="vars" type="button" role="tab">📖 品種圖鑑</button>
+</div>
+
+<aside id="panel" class="ui card-ui" aria-label="名所與品種">
+  <button id="sheetBtn" type="button">收合</button>
+  <div id="panelHead">
+    <div class="selrow">
+      <select id="selRegion" aria-label="地區"></select>
+      <select id="selSpot" aria-label="賞櫻名所"></select>
+    </div>
+    <div id="place"></div>
+    <div id="sum"></div>
+  </div>
+  <div id="list"></div>
+  <div id="panelFoot">
+    <span class="warnline">⚠ 花期為平年值與一般參考，每年可能差一兩週；出發前請查最新開花預報。<button type="button" id="btnEtq2">賞櫻須知</button></span>
+    <span>創作者：<button type="button" id="btnCreator">Mark Tsai（蔡豐全）</button></span>
+    <img src="https://visitor-badge.laobi.icu/badge?page_id=m255525.japansakuraseason" alt="訪客次數" height="20">
+  </div>
+</aside>
+
+<div id="tools" class="ui">
+  <button class="tbtn" id="btnAll" type="button">🗾 看全日本</button>
+  <button class="tbtn hl" id="btnEtq" type="button">🌸 賞櫻須知</button>
+  <button class="tbtn" id="btnSet" type="button">⚙ 常用設定</button>
+  <button class="tbtn" id="installBtn" type="button">📲 加入主畫面</button>
+  <button class="tbtn" id="btnAbout" type="button">⚠ 使用警語</button>
+  <a class="tbtn" href="manual.html" target="_blank" rel="noopener">📖 操作手冊</a>
+</div>
+
+<div id="legend" class="ui card-ui">
+  <div class="lg" id="lgStages"></div>
+  <div style="margin-top:4px"><span class="ln"></span> 櫻前線（當天開花的地方）　陸地粉紅＝正在開，白＝積雪</div>
+</div>
+
+<div id="loading">
+  <svg width="90" height="90" viewBox="-22 -22 44 44" aria-hidden="true">
+    <g fill="#f29bb8" stroke="#c94a73" stroke-width="1"><path id="pt2" d="M0 -2 C-7 -6 -7 -15 -2 -17 L0 -14 L2 -17 C7 -15 7 -6 0 -2Z"/>
+    <use href="#pt2" transform="rotate(72)"/><use href="#pt2" transform="rotate(144)"/><use href="#pt2" transform="rotate(216)"/><use href="#pt2" transform="rotate(288)"/></g>
+    <circle r="3" fill="#d4452b"/>
+  </svg>
+  <div id="loadMsg">正在把日本列島畫出來…</div>
+  <small id="loadSub">第一次開啟需要下載 3D 繪圖元件，並計算各地的開花日</small>
+</div>
+
+<div id="variety" class="modal" role="dialog" aria-modal="true" aria-labelledby="varName">
+  <div class="sheet">
+    <button class="x" type="button" data-close aria-label="關閉">✕</button>
+    <div id="varHead">
+      <figure id="phWrap">
+        <img id="phImg" alt="" referrerpolicy="no-referrer">
+        <div id="phArt" hidden></div>
+        <figcaption id="phCredit"></figcaption>
+      </figure>
+      <div id="varTitle"></div>
+    </div>
+    <div id="varBody"></div>
+    <div class="mfoot">
+      <small>花期為一般性參考：以各地染井吉野的平年值推估，每年依氣溫可能提早或延後；品種說明為一般園藝知識整理。</small>
+      <button class="pbtn" id="btnPrint" type="button">🖨 列印圖鑑</button>
+    </div>
+  </div>
+</div>
+
+<div id="etq" class="modal pad" role="dialog" aria-modal="true" aria-labelledby="etqTitle">
+  <div class="sheet">
+    <button class="x" type="button" data-close aria-label="關閉">✕</button>
+    <h2 id="etqTitle">🌸 賞櫻須知</h2>
+    <p style="margin:0 0 12px;color:var(--ink2);font-size:14px">櫻花樹其實很嬌貴：<b>不折枝、不搖樹、不踩根，垃圾帶走</b>，明年才能再開得這麼漂亮。</p>
+    <div class="etq" id="etqBody"></div>
+    <h3 style="font-family:var(--serif);margin:16px 0 0">賞櫻小辭典</h3>
+    <div class="gloss" id="glossBody"></div>
+  </div>
+</div>
+
+<div id="settings" class="modal pad" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <div class="sheet">
+    <button class="x" type="button" data-close aria-label="關閉">✕</button>
+    <h2 id="setTitle">⚙ 常用設定</h2>
+    <div class="setbar"><button class="sbtn" type="button" id="setOpenAll">全部展開</button><button class="sbtn" type="button" id="setCloseAll">全部收合</button></div>
+    <details class="set-sec" data-sec="day"><summary><span>📅 開啟時的日期</span><em id="sv-day"></em></summary>
+      <div class="set-body">「今天」在 1/10～5/31 之外會改成 3 月 28 日（東京滿開前後）。
+        <select id="setDay"><option value="today">今天</option><option value="last">記住上次看的日期</option><option value="tokyo">固定從 3 月 28 日開始</option></select></div></details>
+    <details class="set-sec" data-sec="mode"><summary><span>📋 開啟時的清單</span><em id="sv-mode"></em></summary>
+      <div class="set-body"><select id="setMode"><option value="spots">名所花況</option><option value="vars">品種圖鑑</option></select></div></details>
+    <details class="set-sec" data-sec="labels"><summary><span>🏷 地圖上的名所標籤</span><em id="sv-labels"></em></summary>
+      <div class="set-body"><label class="ck"><input type="checkbox" id="setLabels"> 顯示名所名稱（關掉後畫面較乾淨，選中的名所仍會顯示）</label></div></details>
+    <details class="set-sec" data-sec="motion"><summary><span>🌬 動畫與花瓣</span><em id="sv-motion"></em></summary>
+      <div class="set-body">減少動態：花瓣變少、飄得慢，海浪與雲幾乎不動。
+        <select id="setMotion"><option value="auto">跟隨系統</option><option value="full">完整動畫</option><option value="reduce">減少動態</option></select></div></details>
+    <details class="set-sec" data-sec="play"><summary><span>▶ 自動播放速度</span><em id="sv-play"></em></summary>
+      <div class="set-body"><select id="setPlay"><option value="900">慢（每 0.9 秒前進兩天）</option><option value="500">標準（每 0.5 秒前進兩天）</option><option value="250">快（每 0.25 秒前進兩天）</option></select></div></details>
+    <details class="set-sec" data-sec="theme"><summary><span>🎨 介面配色</span><em id="sv-theme"></em></summary>
+      <div class="set-body"><select id="setTheme"><option value="auto">跟隨系統</option><option value="light">淺色</option><option value="dark">深色</option></select></div></details>
+    <details class="set-sec" data-sec="about"><summary><span>ℹ 關於本工具</span><em>手冊・警語・創作者</em></summary>
+      <div class="set-body">
+        <div class="chips">
+          <a class="chip" href="manual.html" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">📖 操作手冊</a>
+          <button class="chip" type="button" data-open-about>⚠ 使用警語</button>
+          <button class="chip" type="button" data-open-about="creator">👤 創作者資訊</button>
+          <button class="chip" type="button" data-install>📲 加入主畫面</button>
+          <button class="chip" type="button" data-open-etq>🌸 賞櫻須知</button>
+        </div>
+        <p style="font-size:12px;color:var(--mute);margin:10px 0 0;display:flex;align-items:center;gap:8px">訪客數 <img src="https://visitor-badge.laobi.icu/badge?page_id=m255525.japansakuraseason" alt="訪客次數" height="20"></p>
+      </div></details>
+    <p style="font-size:12px;color:var(--mute);margin:10px 0 0">設定只存在這台裝置的瀏覽器，不會上傳。</p>
+  </div>
+</div>
+
+<div id="about" class="modal pad" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+  <div class="sheet">
+    <button class="x" type="button" data-close aria-label="關閉">✕</button>
+    <h2 id="aboutTitle">關於日本櫻花季地圖</h2>
+    <div class="warn-box">
+      <strong>使用警語</strong>
+      <ul>
+        <li>地圖上的櫻前線與各地開花、滿開日，是以<b>日本氣象廳 1991–2020 年平年值</b>（平均值）推估，並依海拔做簡化修正；實際花期每年受冬春氣溫影響，可能提早或延後一兩週，不是當年的開花預報。</li>
+        <li>名所的花期為依附近測站與名所常見花期整理的一般性參考；點燈、祭典、門票、交通管制與預約規定每年不同，出發前請查詢當地官方公告與最新開花預報。</li>
+        <li>地圖上的海岸線、山高與名所位置都經過簡化與誇大（同一城市的名所會分開排列），不可作為導航或登山依據。</li>
+        <li>品種實景照片取自 Wikimedia Commons，均為 CC BY 或 CC BY-SA 授權，每張照片下方標示作者、授權條款與來源連結；照片版權屬原作者，轉載請依各授權條款標示。</li>
+        <li>本工具為個人製作的教學工具，與日本氣象廳、各地方政府及名所管理單位無關。</li>
+        <li>本工具內容（文字說明、介面、3D 模型）僅供教學、課程及個人使用，禁止未經授權公開發布、販售或商業化使用。</li>
+      </ul>
+    </div>
+    <p style="margin:10px 0 0;font-size:13px;color:var(--ink2);line-height:1.7"><b>資料來源</b>：開花・滿開平年值——日本氣象廳「さくらの開花日・満開日」（1991–2020 年平年值）；日本島嶼輪廓——Natural Earth 1:10m（公有領域）；品種照片——Wikimedia Commons（逐張標示）。完整清單見操作手冊。</p>
+    <p style="margin:12px 0 0"><button class="pbtn" type="button" id="btnEtq3">🌸 看賞櫻須知</button></p>
+    <div class="creator-box" id="creatorBox">
+      <p style="margin:0"><strong>創作者：Mark Tsai（蔡豐全）</strong></p>
+      <p style="margin:4px 0">勞動力發展署創業顧問（2017 起）、經濟部 SBIR 海選專案評審委員（2019－2024），長期擔任小型企業人力提升計畫顧問與多項政府計畫業師、評審委員；專長銷售數據分析、AI 工具運用、政府補助計畫申請、創業與跨境電商。</p>
+      <p style="margin:0"><a href="manual.html#creator" target="_blank" rel="noopener">完整經歷與證照</a>｜<a href="mailto:tsaimark@gmail.com">tsaimark@gmail.com</a></p>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="geo.js"></script>
+<script src="photos.js"></script>
+<script src="scene.js"></script>
+<script src="app.js"></script>
+
+<script>
+/* ================= 頂部跑馬燈 — 獨立運作，沿用工作區共用授權伺服器的公告內容 ================= */
+(function () {
+  'use strict';
+  var MARQUEE_CHECK_URL = "https://script.google.com/macros/s/AKfycbwKX0DNNbY8y4nf90BFTHtxgfqJcHHcZasRrgycl4QAe52_hkjMWSkYk4xOsqU-JPCROw/exec";
+  var STORAGE_KEY = 'sakuraSeasonMarquee';
+  var REFRESH_MS = 20 * 60 * 1000;
+  var bar = document.getElementById('marqueeBar');
+  var track = document.getElementById('marqueeTrack');
+  var lastKey = null;
+  function loadCache() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) { return []; } }
+  function saveCache(items) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch (e) {} }
+  function appendParsedText(container, text) {
+    var re = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, lastIndex = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > lastIndex) container.appendChild(document.createTextNode(text.slice(lastIndex, m.index)));
+      var a = document.createElement('a');
+      a.href = m[2]; a.textContent = m[1]; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.style.color = 'inherit'; a.style.textDecoration = 'underline';
+      container.appendChild(a);
+      lastIndex = re.lastIndex;
+    }
+    if (lastIndex < text.length) container.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
+  function buildTrackContent(items) {
+    var frag = document.createDocumentFragment();
+    function appendPass() { items.forEach(function (item, idx) { if (idx > 0) frag.appendChild(document.createTextNode('　★　')); appendParsedText(frag, item); }); }
+    appendPass(); frag.appendChild(document.createTextNode('　★　')); appendPass();
+    return frag;
+  }
+  function render(items) {
+    if (!items || !items.length) return;
+    var key = JSON.stringify(items);
+    if (key === lastKey) return;
+    lastKey = key;
+    track.innerHTML = '';
+    track.appendChild(buildTrackContent(items));
+    bar.classList.add('show');
+    document.body.classList.add('has-marquee');
+    var width = track.scrollWidth / 2;
+    track.style.animationDuration = Math.max(width / 80, 10) + 's';
+  }
+  function fetchMarquee() {
+    fetch(MARQUEE_CHECK_URL, { method: 'POST', body: JSON.stringify({ serial: '' }) })
+      .then(function (r) { return r.json(); })
+      .then(function (data) { if (data && Array.isArray(data.marquee) && data.marquee.length) { saveCache(data.marquee); render(data.marquee); } })
+      .catch(function () {});
+  }
+  render(loadCache());
+  fetchMarquee();
+  setInterval(fetchMarquee, REFRESH_MS);
+})();
+</script>
+<script>
+/* ================= 加入主畫面（PWA） ================= */
+(function () {
+  'use strict';
+  var deferredPrompt = null;
+  var btn = document.getElementById('installBtn');
+  var ua = navigator.userAgent || '';
+  var isIOSDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isMacDesktop = /Macintosh/.test(ua) && !isIOSDevice;
+  var isSafariEngine = /^((?!chrome|crios|fxios|edgios|android).)*safari/i.test(ua);
+  var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  function fallbackMessage() {
+    if (isIOSDevice) return '請點畫面上的「分享」圖示，選「加入主畫面」';
+    if (isMacDesktop && isSafariEngine) return '請用選單列「檔案」→「加入 Dock」（Safari 17 以上）';
+    return '瀏覽器不支援，或已安裝過';
+  }
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredPrompt = e; });
+  window.addEventListener('appinstalled', function () { deferredPrompt = null; });
+  function bindInstall(btn) {
+    if (isStandalone) { btn.style.display = 'none'; return; }
+    btn.addEventListener('click', function () {
+      if (!deferredPrompt) { window.alert(fallbackMessage()); return; }
+      try { deferredPrompt.prompt(); deferredPrompt.userChoice.then(function () { deferredPrompt = null; }); }
+      catch (err) { window.alert(fallbackMessage()); }
+    });
+  }
+  if (btn) bindInstall(btn);
+  document.querySelectorAll('[data-install]').forEach(bindInstall);
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('service-worker.js').catch(function () {}); });
+  }
+})();
+</script>
+</body>
+</html>
