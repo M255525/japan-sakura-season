@@ -17,7 +17,7 @@
 ## 配套
 - ✅ 跑馬燈（必備、不可關）、manual（含資料來源與照片授權表、完整創作者）、使用警語（頁面底部＋首訪自動跳，`sakuraSeasonSeenWarning`）、⚙常用設定收合式（`sakuraSeasonSettings`；展開狀態 `sakuraSeasonSetOpen`）、偏好 `sakuraSeasonPrefs`、PWA（改 js 記得 `service-worker.js` 的 `CACHE_NAME` +1）、訪客計數器 `page_id=m255525.japansakuraseason`、RWD（375px 無橫向捲動）。
 - ❌ 序號授權（不需要）
-- GitHub Pages：`master` 分支＋`.github/workflows/deploy-pages.yml`。
+- GitHub Pages：**2026-11-12 已上線** https://m255525.github.io/japan-sakura-season/ （`master` 分支＋`.github/workflows/deploy-pages.yml`；repo 由使用者自己 `gh repo create`）。
 
 ## Port／測試
 - port **8868**（`.claude/launch.json` 的 `japan-sakura-season`）。
